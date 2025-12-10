@@ -666,3 +666,17 @@ td.col-score {
 td.col-rank {
   text-align: center !important;
 }
+
+
+/* ================= FORCE LEFT ALIGNMENT FOR SPECIFIC COLUMNS ================= */
+
+.dt-table td:nth-child(1),
+.dt-table th:nth-child(1),
+.dt-table td:nth-child(2),
+.dt-table th:nth-child(2),
+.dt-table td:nth-child(3),
+.dt-table th:nth-child(3),
+.dt-table td:nth-child(4),
+.dt-table th:nth-child(4) {
+  text-align: left !important;
+}

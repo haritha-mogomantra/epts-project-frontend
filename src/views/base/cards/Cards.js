@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import axiosInstance from "../../../utils/axiosInstance";
 
 const LoginDetails = () => {
   const API_URL = "http://127.0.0.1:8000/api/users/login-details/";
@@ -24,8 +25,8 @@ const LoginDetails = () => {
       let page = 1;
 
       while (true) {
-        const res = await fetch(`${API_URL}?page=${page}`);
-        const data = await res.json();
+        const res = await axiosInstance.get(`users/login-details/?page=${page}`);
+        const data = res.data;
 
         if (!data.results || data.results.length === 0) break;
 
@@ -49,8 +50,10 @@ const LoginDetails = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}?page=${page}&page_size=${pageSize}`);
-      const data = await res.json();
+      const res = await axiosInstance.get(
+        `users/login-details/?page=${page}&page_size=${pageSize}`
+      );
+      const data = res.data;
 
       const employeesList = (data.results || []).map((emp) => ({
         ...emp,
@@ -86,10 +89,7 @@ const LoginDetails = () => {
   }, []);
 
   useEffect(() => {
-    if (search.trim() === "") {
-      console.log('Fetching with:', currentPage, entries);
-      fetchEmployees(currentPage, entries);
-    }
+    
   }, [entries, currentPage, search]);
 
   
@@ -99,14 +99,10 @@ const LoginDetails = () => {
   const regeneratePassword = async (empId) => {
     setRegenLoading(empId); // show loader for specific row
     try {
-      const response = await fetch(`${REGENERATE_URL}${empId}/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.error || "Password regeneration failed");
+      const response = await axiosInstance.post(
+        `users/regenerate-password/${empId}/`
+      );
+      const data = response.data;
 
       const newPass = data.temp_password || data.password || "";
 
@@ -160,6 +156,8 @@ const LoginDetails = () => {
         prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
 
+    setCurrentPage(1);
+
     // Scroll clicked column into view
     setTimeout(() => {
       if (headerRefs.current[key]) {
@@ -172,38 +170,43 @@ const LoginDetails = () => {
     }, 300);
   };
 
-  const sourceData =
-    search.trim() === ""
-      ? employees            // Use paginated data
-      : allEmployees;        // Use full data only when searching
-
-  const filteredData =
-    search.trim() === ""
-      ? sourceData
-      : sourceData.filter(
-          (emp) =>
-            emp.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-            emp.emp_id?.toLowerCase().includes(search.toLowerCase()) ||
-            emp.username?.toLowerCase().includes(search.toLowerCase())
-        );
-
-
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortConfig.key) return 0;
-
-    const aVal = a[sortConfig.key] ?? "";
-    const bVal = b[sortConfig.key] ?? "";
-
-    if (String(aVal).toLowerCase() < String(bVal).toLowerCase())
-      return sortConfig.direction === "asc" ? -1 : 1;
-
-    if (String(aVal).toLowerCase() > String(bVal).toLowerCase())
-      return sortConfig.direction === "asc" ? 1 : -1;
-
-    return 0;
+  // 1️⃣ Base data depends on search
+  let baseData = allEmployees.filter((emp) => {
+    if (search.trim() === "") return true;
+    
+    const term = search.trim().toLowerCase();
+    return (
+      emp.emp_id?.toLowerCase().startsWith(term) ||
+      emp.full_name?.toLowerCase().startsWith(term) ||
+      emp.username?.toLowerCase().startsWith(term)
+    );
   });
 
-  const displayData = sortedData;
+  // 2️⃣ Apply global sorting
+  let sortedData = [...baseData];
+  if (sortConfig.key) {
+    sortedData.sort((a, b) => {
+      const aVal = a[sortConfig.key] ?? "";
+      const bVal = b[sortConfig.key] ?? "";
+
+      if (String(aVal).toLowerCase() < String(bVal).toLowerCase())
+        return sortConfig.direction === "asc" ? -1 : 1;
+
+      if (String(aVal).toLowerCase() > String(bVal).toLowerCase())
+        return sortConfig.direction === "asc" ? 1 : -1;
+
+      return 0;
+    });
+  }
+
+  // 3️⃣ GLOBAL PAGINATION (applies to sortedData)
+  const startIndex = (currentPage - 1) * entries;
+  const endIndex = startIndex + entries;
+  const displayData = sortedData.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setTotalRecords(sortedData.length);
+  }, [baseData]);
 
   // ==================================================
   // PAGINATION
@@ -353,6 +356,7 @@ const LoginDetails = () => {
                     onChange={(e) => {
                       const value = e.target.value;
                       setSearch(value);
+                      setCurrentPage(1); 
 
                       if (value.trim() !== "" && allEmployees.length === 0) {
                         fetchAllEmployees().then((all) => setAllEmployees(all));
@@ -423,8 +427,19 @@ const LoginDetails = () => {
                     </div>
                   </th>
 
-                  {/* UNSORTABLE */}
-                  <th>Username</th>
+                  <th
+                    ref={(el) => (headerRefs.current["username"] = el)}
+                    onClick={() => handleSort("emp_id")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span>Username</span>
+                      <SortIcon
+                        state={getSortState("emp_id")}
+                        onClick={() => handleSort("emp_id")}
+                      />
+                    </div>
+                  </th>
                   <th>Password</th>
                   <th>Action</th>
 
