@@ -122,7 +122,13 @@ function DynamicPerformanceReport() {
     useEffect(() => {
       if (reportType === "manager") {
         fetchManagers();
-          setSelectedOption("ALL_MGR");
+        setSelectedOption("ALL_MGR");
+        
+        // ✅ Auto-load data for "All Managers" when radio button is clicked
+        const { year, week } = parseWeek(selectedWeek2);
+        if (year && week) {
+          fetchReport("manager", "ALL_MGR", null, week, year);
+        }
       }
     }, [reportType]);
 
@@ -130,7 +136,13 @@ function DynamicPerformanceReport() {
     useEffect(() => {
       if (reportType === "department") {
         fetchDepartments();
-          setSelectedOption("ALL_DEPT");
+        setSelectedOption("ALL_DEPT");
+        
+        // ✅ Auto-load data for "All Departments" when radio button is clicked
+        const { year, week } = parseWeek(selectedWeek2);
+        if (year && week) {
+          fetchReport("department", null, "ALL_DEPT", week, year);
+        }
       }
     }, [reportType]);
 
@@ -511,28 +523,6 @@ function DynamicPerformanceReport() {
   const sortedData = React.useMemo(() => {
     let data = [...filteredData];
 
-    // MANAGER REPORT — filter by manager full name using emp_id from dropdown
-    if (reportType === "manager" && selectedOption !== "ALL_MGR") {
-      const selectedManager = managers.find(m => m.emp_id === selectedOption);
-      if (selectedManager) {
-        const managerName = selectedManager.full_name.toLowerCase().trim();
-        data = data.filter(emp =>
-          emp.manager?.toLowerCase().trim() === managerName
-        );
-      }
-    }
-
-    // DEPARTMENT REPORT — filter by department NAME based on department code
-    if (reportType === "department" && selectedOption !== "ALL_DEPT") {
-      const selectedDept = departments.find(d => d.code === selectedOption);
-      if (selectedDept) {
-        const deptName = selectedDept.name.toLowerCase().trim();
-        data = data.filter(emp =>
-          emp.department?.toLowerCase().trim() === deptName
-        );
-      }
-    }
-
 
     // -----------------------------------------
     // SEARCH FILTER
@@ -704,48 +694,20 @@ function DynamicPerformanceReport() {
                   id={`type-${type}`}
                   value={type}
                   checked={reportType === type}
-                  onChange={async (e) => {
+                  onChange={(e) => {
                     const type = e.target.value;
                     setReportType(type);
 
-                    // Reset interaction states completely
                     setHasUserInteracted(false);
                     setHasManagerInteracted(false);
                     setHasDepartmentInteracted(false);
                     setIsWeekChanged(false);
 
-                    setMaxSelectableWeek(getCurrentWeek());
+                    setSelectedOption(type === "manager" ? "ALL_MGR" :
+                                      type === "department" ? "ALL_DEPT" : "");
 
-                    try {
-                      const res = await axiosInstance.get("/reports/latest-week/");
-
-                      if (res?.data?.week && res?.data?.year) {
-                        const latestWeekValue = `${res.data.year}-W${String(res.data.week).padStart(2, "0")}`;
-                        const latestWeekNum = parseInt(res.data.week);
-                        const latestYearNum = parseInt(res.data.year);
-
-                        if (type === "manager") {
-                          setSelectedOption("ALL_MGR");
-                          setFilteredData([]);
-                          await fetchReport("manager", "", "", latestWeekNum, latestYearNum);
-                        }
-                        else if (type === "department") {
-                          setSelectedOption("ALL_DEPT");
-                          setFilteredData([]);
-                          await fetchReport("department", "", "", latestWeekNum, latestYearNum);
-                        }
-                        else {
-                          setSelectedOption("");
-                          setFilteredData([]);
-                          await fetchReport("weekly", "", "", latestWeekNum, latestYearNum);
-                        }
-
-                        // Update selected week WITHOUT marking user interaction
-                        setSelectedWeek2(latestWeekValue);
-                      }
-                    } catch (err) {
-                      console.error("Failed to fetch latest week:", err);
-                    }
+                    // ✅ Clear table when changing report type (forces re-submit)
+                    setFilteredData([]);
                   }}
                 />
                 <label className="form-check-label text-capitalize">
@@ -788,10 +750,9 @@ function DynamicPerformanceReport() {
                     value={selectedOption}
                     onChange={(e) => {
                       setSelectedOption(e.target.value);
-
-                      if (e.target.value !== "ALL_MGR") {
-                        setHasManagerInteracted(true);
-                      }
+                      
+                      // Enable Submit button when dropdown changes (including back to "All Managers")
+                      setHasManagerInteracted(true);
                     }}
                   >
                     <option value="ALL_MGR">All Managers</option>
@@ -812,10 +773,9 @@ function DynamicPerformanceReport() {
                     value={selectedOption}
                     onChange={(e) => {
                       setSelectedOption(e.target.value);
-
-                      if (e.target.value !== "ALL_DEPT") {
-                        setHasDepartmentInteracted(true);
-                      }
+                      
+                      // Enable Submit button when dropdown changes (including back to "All Departments")
+                      setHasDepartmentInteracted(true);
                     }}
                   >
                     <option value="ALL_DEPT">All Departments</option>
