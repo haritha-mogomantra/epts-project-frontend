@@ -879,7 +879,7 @@ function DynamicPerformanceReport() {
               <div className="table-responsive">
               <table
                 className="table dt-table align-middle"
-                style={{ whiteSpace: "nowrap", width: "100%", textAlign: "left" }}
+                style={{ whiteSpace: "nowrap", width: "100%" }}
               >
                 <thead className="custom-table-header">
                   <tr>
@@ -1099,7 +1099,7 @@ function DynamicPerformanceReport() {
                             <td>{emp.department}</td>
                             <td>{emp.manager}</td>
 
-                            <td style={{ textAlign: "right" }}>{emp.score}</td>
+                            <td style={{ cssText: "text-align: right !important;" }}>{emp.score}</td>
                             <td style={{ textAlign: "center" }}>{emp.rank}</td>
                           </>
                         )}
@@ -1111,7 +1111,7 @@ function DynamicPerformanceReport() {
                             <td>{emp.name}</td>
                             <td>{emp.manager}</td>
 
-                            <td style={{ textAlign: "right" }}>{emp.score}</td>
+                            <td style={{ cssText: "text-align: right !important;" }}>{emp.score}</td>
                             <td style={{ textAlign: "center" }}>{emp.rank}</td>
                           </>
                         )}
@@ -1123,7 +1123,7 @@ function DynamicPerformanceReport() {
                             <td>{emp.id}</td>
                             <td>{emp.name}</td>
 
-                            <td style={{ textAlign: "right" }}>{emp.score}</td>
+                            <td style={{ cssText: "text-align: right !important;" }}>{emp.score}</td>
                             <td style={{ textAlign: "center" }}>{emp.rank}</td>
                           </>
                         )}
