@@ -523,7 +523,6 @@ function DynamicPerformanceReport() {
   const sortedData = React.useMemo(() => {
     let data = [...filteredData];
 
-
     // -----------------------------------------
     // SEARCH FILTER
     // -----------------------------------------
@@ -533,27 +532,8 @@ function DynamicPerformanceReport() {
       )
     );
 
-    // ----------------------------------------------------------
-    // RECALCULATE RANK AFTER FILTERING (Manager/Department wise)
-    // ----------------------------------------------------------
-    let prevScore = null;
-    let currentRank = 0;
-
-    // Sort by score DESC before assigning rank
-    const ranked = [...data].sort((a, b) => Number(b.score) - Number(a.score));
-
-    ranked.forEach(item => {
-      if (prevScore === null || item.score !== prevScore) {
-        currentRank += 1;
-        prevScore = item.score;
-      }
-      item.rank = currentRank;  // overwrite global rank with manager-wise rank
-    });
-
-    data = ranked;
-
     // -----------------------------------------
-    // SORTING
+    // SORTING (without rank recalculation)
     // -----------------------------------------
     if (sortConfig.key) {
       data.sort((a, b) => {
@@ -580,7 +560,7 @@ function DynamicPerformanceReport() {
     }
 
     return data;
-  }, [filteredData, reportType, selectedOption, sortConfig, searchTerm]);
+  }, [filteredData, sortConfig, searchTerm]);
 
   const totalPages = Math.ceil(sortedData.length / pageSize);
 
@@ -694,7 +674,7 @@ function DynamicPerformanceReport() {
                   id={`type-${type}`}
                   value={type}
                   checked={reportType === type}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const type = e.target.value;
                     setReportType(type);
 
@@ -706,8 +686,20 @@ function DynamicPerformanceReport() {
                     setSelectedOption(type === "manager" ? "ALL_MGR" :
                                       type === "department" ? "ALL_DEPT" : "");
 
-                    // ✅ Clear table when changing report type (forces re-submit)
-                    setFilteredData([]);
+                    // ✅ Clear search term when switching report types
+                    setSearchTerm("");
+
+                    // ✅ Auto-load data based on report type
+                    const { year, week } = parseWeek(selectedWeek2);
+                    if (year && week) {
+                      if (type === "manager") {
+                        await fetchReport("manager", "ALL_MGR", null, week, year);
+                      } else if (type === "department") {
+                        await fetchReport("department", null, "ALL_DEPT", week, year);
+                      } else if (type === "weekly") {
+                        await fetchReport("weekly", null, null, week, year);
+                      }
+                    }
                   }}
                 />
                 <label className="form-check-label text-capitalize">
@@ -751,6 +743,9 @@ function DynamicPerformanceReport() {
                     onChange={(e) => {
                       setSelectedOption(e.target.value);
                       
+                      // ✅ Clear search when changing manager selection
+                      setSearchTerm("");
+                      
                       // Enable Submit button when dropdown changes (including back to "All Managers")
                       setHasManagerInteracted(true);
                     }}
@@ -773,6 +768,9 @@ function DynamicPerformanceReport() {
                     value={selectedOption}
                     onChange={(e) => {
                       setSelectedOption(e.target.value);
+                      
+                      // ✅ Clear search when changing department selection
+                      setSearchTerm("");
                       
                       // Enable Submit button when dropdown changes (including back to "All Departments")
                       setHasDepartmentInteracted(true);
