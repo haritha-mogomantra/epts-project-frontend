@@ -667,6 +667,11 @@ td.col-rank {
   text-align: center !important;
 }
 
+/* ================= EMPLOYEE PAGE ONLY — LEFT ALIGN ALL COLUMNS ================= */
+.employee-table-page .dt-table th,
+.employee-table-page .dt-table td {
+  text-align: left !important;
+}
 
 /* ================= FORCE LEFT ALIGNMENT FOR SPECIFIC COLUMNS ================= */
 

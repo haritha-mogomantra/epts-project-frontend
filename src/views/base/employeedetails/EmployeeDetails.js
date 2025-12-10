@@ -744,7 +744,7 @@ function EmployeeTables() {
 
 
   return (
-    <div className="container py-3">
+    <div className="container py-3 employee-table-page">
       <h5 className="mb-3">EMPLOYEE DETAILS</h5>
 
       {alert.message && (

@@ -453,25 +453,23 @@ const PerformanceMetrics = () => {
   };
 
 
-  // VALID EMP-ID format = EMP + 4 digits (EMP0001)
-  const isValidEmpId = (value) => /^EMP\d{4}$/i.test(value.trim());
+  const isValidEmpId = (value) => value.toUpperCase().startsWith("EMP");
 
   // VALID NAME format = alphabets + spaces only
   const isValidName = (value) => /^[A-Za-z ]+$/.test(value.trim());
 
-  // INVALID search input conditions → show dropdown alert
   const isInvalidSearchInput = (value) => {
     const v = value.trim();
 
     if (!v) return false;
 
-    // If starts with EMP but not valid EMP0001 → invalid
-    if (v.toUpperCase().startsWith("EMP") && !isValidEmpId(v)) {
-      return true;
+    // RULE: ANYTHING starting with EMP is valid
+    if (v.toUpperCase().startsWith("EMP")) {
+      return false;
     }
 
-    // If contains numbers / symbols → invalid
-    if (!isValidEmpId(v) && !isValidName(v)) {
+    // Name search allowed only A-Z and spaces
+    if (!isValidName(v)) {
       return true;
     }
 
@@ -867,49 +865,84 @@ const PerformanceMetrics = () => {
               className="form-control"
               placeholder="Type or select employee"
               value={employeeId}
-              onChange={(e) => {
-                const value = e.target.value;
+              onChange={async (e) => {
+                const value = e.target.value.trim();
                 setEmployeeId(value);
+
+                // Reset data when typing
+                setEmployeeData({ name: "", department: "", manager: "" });
 
                 if (!value) {
                   setFilteredEmployees([]);
                   return;
                 }
 
-                // 1️⃣ If invalid pattern → show invalid message row
-                if (isInvalidSearchInput(value)) {
-                  setFilteredEmployees([{ type: "invalid" }]);
-                  return;
-                }
+                const upper = value.toUpperCase();
 
-                // 2️⃣ Check if typed full EMP0007 but not in eligibleEmployees
-                const typedFullMatch = value.length === 7 && value.toUpperCase().startsWith("EMP");
+                // Anything starting with "EMP" is valid format
+                if (upper.startsWith("EMP")) {
+                  // Filter eligible employees by prefix
+                  const filtered = eligibleEmployees.filter((emp) =>
+                    emp.emp_id.toUpperCase().startsWith(upper)
+                  );
 
-                if (typedFullMatch) {
-                  const existsInEligible = eligibleEmployees.some(emp => emp.emp_id === value.toUpperCase());
+                  if (filtered.length > 0) {
+                    // Show matching eligible employees
+                    setFilteredEmployees(filtered);
+                    return;
+                  }
 
-                  if (!existsInEligible) {
-                    // Employee exists in system but not eligible → show evaluation exists message
-                    setFilteredEmployees([{ type: "exists" }]);
+                  // No match in eligible list → check if employee exists in DB
+                  try {
+                    const empRes = await axiosInstance.get(`/employee/employees/${upper}/`);
+                    const emp = empRes.data;
+
+                    // Employee exists but NOT eligible (already evaluated)
+                    setFilteredEmployees([{ type: "evaluated" }]);
+                    return;
+                  } catch (err) {
+                    // Employee does NOT exist in database
+                    setFilteredEmployees([{ type: "not_found" }]);
                     return;
                   }
                 }
 
-                // 3️⃣ Normal filtering for eligible employees
-                setFilteredEmployees(
-                  eligibleEmployees.filter(emp =>
-                    emp.emp_id.toUpperCase().includes(value.toUpperCase()) ||
-                    emp.full_name.toUpperCase().includes(value.toUpperCase())
-                  )
+                // NAME SEARCH (if NOT starting with EMP)
+                if (!/^[A-Za-z ]+$/.test(upper)) {
+                  setFilteredEmployees([{ type: "invalid" }]);
+                  return;
+                }
+
+                const filtered = eligibleEmployees.filter((emp) =>
+                  emp.full_name.toUpperCase().includes(upper)
                 );
+                setFilteredEmployees(filtered.length ? filtered : [{ type: "no_match" }]);
               }}
               onFocus={() => {
-                if (eligibleEmployees.length > 0) {
+                const value = employeeId.trim().toUpperCase();
+                
+                if (!value) {
+                  // No input → show all eligible employees
                   setFilteredEmployees(eligibleEmployees);
+                  return;
+                }
+
+                // If user already typed something, filter based on current input
+                if (value.startsWith("EMP")) {
+                  const filtered = eligibleEmployees.filter((emp) =>
+                    emp.emp_id.toUpperCase().startsWith(value)
+                  );
+                  setFilteredEmployees(filtered.length > 0 ? filtered : eligibleEmployees);
+                } else {
+                  // Name search
+                  const filtered = eligibleEmployees.filter((emp) =>
+                    emp.full_name.toUpperCase().includes(value)
+                  );
+                  setFilteredEmployees(filtered.length > 0 ? filtered : eligibleEmployees);
                 }
               }}
               onBlur={() => {
-                setTimeout(() => setFilteredEmployees([]), 150);
+                setTimeout(() => setFilteredEmployees([]), 200);
               }}
             />
 
@@ -927,43 +960,54 @@ const PerformanceMetrics = () => {
                 </ul>
             )}
 
-            <ul className="list-group position-absolute w-100" 
-          style={{ maxHeight: "200px", overflowY: "auto", zIndex: 2000 }}>
+            <ul className="list-group position-absolute w-100"
+              style={{ maxHeight: "200px", overflowY: "auto", zIndex: 2000 }}>
 
-        {filteredEmployees[0]?.type === "invalid" && (
-          <li className="list-group-item text-muted text-center">
-            Invalid Employee ID Format
-          </li>
-        )}
+              {/* Show messages */}
+              {filteredEmployees.length === 1 && filteredEmployees[0].type === "invalid" && (
+                <li className="list-group-item text-muted text-center">
+                  Invalid Employee ID Format
+                </li>
+              )}
 
-        {filteredEmployees[0]?.type === "exists" && (
-          <li className="list-group-item text-muted text-center">
-            Evaluation already exists for this employee
-          </li>
-        )}
+              {filteredEmployees.length === 1 && filteredEmployees[0].type === "not_found" && (
+                <li className="list-group-item text-muted text-center">
+                  Employee does not exist
+                </li>
+              )}
 
-        {filteredEmployees[0]?.type !== "invalid" &&
-        filteredEmployees[0]?.type !== "exists" &&
-        filteredEmployees.map(emp => (
-          <li
-            key={emp.emp_id}
-            className="list-group-item list-group-item-action"
-            onClick={() => {
-              setEmployeeId(emp.emp_id);
-              setEmployeeData({
-                name: emp.full_name,
-                department: emp.department_name,
-                manager: emp.manager_name || "Not Assigned",
-              });
-              setFilteredEmployees([]);
-              handleSearch();
-            }}
-          >
-            {emp.emp_id} — {emp.full_name}
-          </li>
-        ))}
+              {filteredEmployees.length === 1 && filteredEmployees[0].type === "evaluated" && (
+                <li className="list-group-item text-muted text-center">
+                  Employee already evaluated for this week.
+                </li>
+              )}
 
-      </ul>
+              {filteredEmployees
+                .filter(emp => !emp.type)
+                .map(emp => (
+                  <li
+                    key={emp.emp_id}
+                    className="list-group-item list-group-item-action"
+                    style={{ cursor: "pointer" }}
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // ✅ Prevents input blur
+                      
+                      setEmployeeId(emp.emp_id);
+
+                      setEmployeeData({
+                        name: emp.full_name || "",
+                        department: emp.department_name || "",
+                        manager: emp.manager_name || "Not Assigned",
+                      });
+
+                      setFilteredEmployees([]); // closes dropdown
+                    }}
+                  >
+                    {emp.emp_id} — {emp.full_name}
+                  </li>
+                ))
+              }
+            </ul>
           </div>
 
           {/* RIGHT: Back + Print (conditional) */}
