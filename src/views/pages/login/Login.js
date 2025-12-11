@@ -56,6 +56,17 @@ export default function Login() {
           `${first_name || ""} ${last_name || ""}`.trim()
         );
 
+        // Required for PerformanceMetrics role check
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            emp_id,
+            username,
+            role: role?.toLowerCase() || "",
+            full_name: `${first_name || ""} ${last_name || ""}`.trim(),
+          })
+        );
+
 
         setAlert({
           show: true,

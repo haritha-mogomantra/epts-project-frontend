@@ -54,6 +54,24 @@ const formatWeekRange = (weekValue) => {
   return `Week ${week} (${ISOweekStart.toLocaleDateString("en-GB", fmt)} - ${ISOweekEnd.toLocaleDateString("en-GB", fmt)} ${year})`;
 };
 
+const getUserRole = () => {
+  let user = null;
+
+  try {
+    user = JSON.parse(localStorage.getItem("user"));
+  } catch {}
+
+  // If user object missing, fall back to role stored in login
+  const role =
+    user?.role ||
+    localStorage.getItem("role") ||
+    "";
+
+  return role.toLowerCase();
+};
+
+
+
 const PerformanceMetrics = () => {
   const [selectedWeek, setSelectedWeek] = useState("");
 
@@ -125,6 +143,12 @@ const PerformanceMetrics = () => {
 
   useEffect(() => {
     if (mode !== "add") return;
+
+    const role = getUserRole();
+    if (!["admin", "manager"].includes(role)) {
+      return; // Prevents unintended loading for Employees
+    }
+
 
     const { year, week } = parseWeek(selectedWeek);
     if (!year || !week) {
@@ -632,6 +656,16 @@ const PerformanceMetrics = () => {
       return;
     }
 
+    const role = getUserRole();
+    if (!["admin", "manager"].includes(role)) {
+      setValidationModal({
+        show: true,
+        message: "Only Admin or Manager can submit evaluations.",
+      });
+      return;
+    }
+
+
     const metricFields = [
       "communication_skills",
       "multitasking",
@@ -694,7 +728,6 @@ const PerformanceMetrics = () => {
         res = await axiosInstance.post("performance/evaluations/", payload);
       }
 
-
       if (res.status === 201 || res.status === 200) {
         setSuccessMessage(
           mode === "edit"
@@ -715,9 +748,12 @@ const PerformanceMetrics = () => {
           });
         }, 1200);
       } else {
+        // Handle unexpected response status
         console.log("Server responded:", res.status, res.data);
-        setValidationModal({ show: true, message: "Unexpected server response. Try again." });
-        return;
+        setValidationModal({ 
+          show: true, 
+          message: "Unexpected server response. Please try again." 
+        });
       }
     } catch (err) {
       console.error("Submit error:", err.response || err);
@@ -1226,7 +1262,7 @@ const PerformanceMetrics = () => {
           </div>
 
           {/* FORM BUTTONS */}
-          <div className={`mt-3 d-flex p-2 ${mode === "edit" ? "justify-content-end" : "justify-content-between"}`}>
+          <div className="mt-3 d-flex justify-content-between p-2">
 
             {/* LEFT SIDE — CANCEL (only in Add mode) */}
             {mode === "add" && (
