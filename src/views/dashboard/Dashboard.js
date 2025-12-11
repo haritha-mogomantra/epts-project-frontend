@@ -1004,7 +1004,7 @@ const getDeptColor = (dept) => {
                           }`}
                           style={{ display: "inline-block", minWidth: "45px" }}
                         >
-                          #{emp.rank}
+                          {emp.rank}
                         </span>
                       </td>
                     </tr>
