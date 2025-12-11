@@ -887,7 +887,7 @@ const getDeptColor = (dept) => {
         {/* Table */}
         <div className="table-responsive">
           <table
-            className="table dt-table performance-table align-middle"
+            className="table dt-table performance-table performance-dashboard-table align-middle"
             style={{ tableLayout: "fixed", width: "100%" }}
           >
             <thead>

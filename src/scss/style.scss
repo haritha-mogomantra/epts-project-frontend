@@ -685,3 +685,15 @@ td.col-rank {
 .dt-table th:nth-child(4) {
   text-align: left !important;
 }
+
+
+/* ============================================
+   PERFORMANCE DASHBOARD — SCORE RIGHT ALIGN ONLY
+   ============================================ */
+
+.performance-dashboard-table td:nth-child(4),
+.performance-dashboard-table th:nth-child(4) {
+  text-align: right !important;
+  padding-right: 10px !important;
+}
+
