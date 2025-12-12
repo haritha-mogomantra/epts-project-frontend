@@ -1,302 +1,3 @@
-/*
-import React, { useState } from "react";
-import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
-
-const DEFAULT_PROFILE = "/default-profile.png";
-
-const labelMap = {
-  emp_id: "Employee ID",
-  first_name: "First Name",
-  last_name: "Last Name",
-  gender: "Gender",
-  dob: "Date of Birth",
-  contact_number: "Contact Number",
-  email: "Email ID",
-  profile_picture_url: "Profile Picture",
-
-  department: "Department",
-  department_code: "Department Code",
-  designation: "Role / Designation",
-  role: "Role",
-  project_name: "Project Name",
-  joining_date: "Date of Joining",
-  manager_name: "Manager Name",
-  status: "Status",
-
-  address_line1: "Address Line 1",
-  address_line2: "Address Line 2",
-  city: "City",
-  state: "State",
-  pincode: "Pincode",
-};
-
-const LOCKED_PERSONAL_FIELDS = ["emp_id", "first_name", "last_name", "email"];
-
-const Profile = ({ title, editable, personal = {}, professional = {}, address = {} }) => {
-  // unified input height + look
-  const inputStyle = {
-    height: "42px",
-    fontSize: "0.9rem",
-  };
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const [formData, setFormData] = useState({
-    personal,
-    professional,
-    address,
-  });
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      const token = localStorage.getItem("access_token");
-      const role = localStorage.getItem("role");
-
-      const updateUrl =
-        role === "Admin"
-          ? "http://127.0.0.1:8000/api/employee/admin/profile/"
-          : "http://127.0.0.1:8000/api/employee/profile/";
-
-      await axios.patch(
-        updateUrl,
-        {
-          ...formData.personal,
-          ...formData.professional,
-          ...formData.address,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      alert("Profile updated successfully!");
-      setIsEditing(false);
-    } catch (err) {
-      alert("Failed to update profile");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Convert date → DD Month YYYY (e.g., 12 February 2025)
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "—";
-    const d = new Date(dateStr);
-    if (isNaN(d)) return dateStr; // fallback
-
-    return d.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-
-
-  const renderField = (section, key, value) => {
-
-    // hide profile picture inside personal section
-    if (section === "personal" && key === "profile_picture_url") return null;
-
-    const isLockedPersonal =
-      section === "personal" && LOCKED_PERSONAL_FIELDS.includes(key);
-
-    const isEditable =
-      isEditing &&
-      ((section === "personal" && !isLockedPersonal) ||
-       section === "address");
-
-    const isGrey =
-      isEditing &&
-      ((section === "personal" && isLockedPersonal) ||
-       section === "professional");
-
-    return (
-      <div className="col-md-6 mb-4" key={key}>
-        <label className="fw-semibold text-secondary small mb-1">
-          {labelMap[key]}
-        </label>
-
-        {isEditable ? (
-          <input
-            type="text"
-            className="form-control"
-            style={inputStyle}
-            value={formData[section][key] || ""}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                [section]: {
-                  ...formData[section],
-                  [key]: e.target.value,
-                },
-              })
-            }
-          />
-        ) : isGrey ? (
-          <input
-            type="text"
-            className="form-control"
-            style={{
-              ...inputStyle,
-              backgroundColor: "#f0f0f0",
-              color: "#6c757d",
-              border: "1px solid #ddd",
-            }}
-            value={value || ""}
-            disabled
-          />
-        ) : (
-          <div
-            className="form-control"
-            style={{
-                ...inputStyle,
-                backgroundColor: "#ffffff",
-                border: "1px solid #e5e7eb",
-                color: "#111827",
-            }}
-            >
-            {["dob", "joining_date"].includes(key)
-              ? formatDate(value)
-              : value || "—"}
-            </div>
-        )}
-      </div>
-    );
-  };
-
-
-  return (
-    <div className="container py-4">
-
-
-        <div
-        className="p-4 rounded shadow-sm mb-4"
-        style={{
-            background: "linear-gradient(to right, #eef2ff, #f7faff)",
-            border: "1px solid #e2e8f0",
-        }}
-        >
-        <div className="d-flex align-items-center w-100">
-
-            <input
-                type="file"
-                id="headerProfileUpload"
-                hidden
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                    const previewURL = URL.createObjectURL(file);
-
-                    setFormData((prev) => ({
-                        ...prev,
-                        personal: {
-                        ...prev.personal,
-                        profile_picture_url: previewURL,   // UI preview
-                        profile_picture_file: file,        // real file for backend
-                        },
-                    }));
-                    }
-                }}
-                />
-
-                <img
-                src={formData.personal.profile_picture_url || DEFAULT_PROFILE}
-                alt="Profile"
-                className="rounded-circle shadow"
-                style={{
-                    width: 70,
-                    height: 70,
-                    objectFit: "cover",
-                    cursor: isEditing ? "pointer" : "default",
-                }}
-                onClick={() => {
-                  if (editable && isEditing)
-                      document.getElementById("headerProfileUpload").click();
-              }}
-                />
-
-            <div className="ms-3">
-            <h5 className="mb-0">
-                {formData.personal.first_name} {formData.personal.last_name}
-            </h5>
-            <div className="text-muted small">{formData.personal.email}</div>
-            <div className="text-muted small">{formData.professional.role}</div>
-            </div>
-
-            {editable && (
-            <button
-                className="btn btn-primary ms-auto px-4"
-                onClick={() => setIsEditing(true)}
-                style={{ borderRadius: "6px" }}
-            >
-                Edit
-            </button>
-            )}
-
-        </div>
-        </div>
-
-      <div className="card shadow-sm border-0 p-4">
-
-        <h4 className="mb-3" style={{ color: "#4B49AC", fontWeight: 700 }}>
-          {title}
-        </h4>
-
-        <h6 className="mt-4 mb-3 text-secondary fw-bold">Personal Information</h6>
-        <div className="row px-2">
-            {Object.entries(formData.personal).map(([k, v]) => renderField("personal", k, v))}
-        </div>
-
-
-        <h6 className="mt-4 mb-3 text-secondary fw-bold">Professional Information</h6>
-        <div className="row px-2">
-            {Object.entries(formData.professional).map(([k, v]) => renderField("professional", k, v))}
-        </div>
-
-
-        <h6 className="mt-4 mb-3 text-secondary fw-bold">Address</h6>
-        <div className="row px-2">
-            {Object.entries(formData.address).map(([k, v]) => renderField("address", k, v))}
-        </div>
-
-
-        {editable && isEditing && (
-            <div className="d-flex justify-content-between mt-4">
-  
-              <button
-                className="btn btn-secondary px-4"
-                style={{ borderRadius: 6 }}
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </button>
-
-              <button
-                className="btn btn-primary px-4"
-                style={{ borderRadius: 6 }}
-                disabled={saving}
-                onClick={handleSave}
-              >
-                {saving ? "Saving..." : "Save"}
-              </button>
-
-            </div>
-            )}
-      </div>
-    </div>
-  );
-};
-
-export default Profile;
-*/
-
-
-
-
-
 import React, { useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -321,7 +22,6 @@ const validateProfilePicture = (file) => {
 
 const Profile = ({ title, editable, personal = {}, professional = {}, address = {} }) => {
 
-  const [activeTab, setActiveTab] = useState("admin");
   const [editingSections, setEditingSections] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -374,7 +74,7 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
       // Validate file
       const validation = validateProfilePicture(file);
       if (!validation.valid) {
-        alert(validation.error);
+        showToast(validation.error, "error");
         e.target.value = ''; // Reset input
         return;
       }
@@ -384,10 +84,7 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
       img.onload = () => {
         const aspectRatio = img.width / img.height;
         if (Math.abs(aspectRatio - 1) > 0.2) { // Allow 20% deviation from 1:1
-          if (!confirm('Recommended aspect ratio is 1:1 (square). Continue anyway?')) {
-            e.target.value = '';
-            return;
-          }
+          showToast("Recommended 1:1 (square) ratio. Uploaded image may look stretched.", "warning");
         }
         
         // If validation passes, update preview
@@ -461,13 +158,11 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
         },
       });
 
-      // If backend returned updated picture – update UI state AND original state
       if (response?.data?.profile_picture_url) {
         const newPictureUrl = response.data.profile_picture_url;
-        
-        // Add timestamp to prevent browser caching
+
         const urlWithTimestamp = `${newPictureUrl}?t=${new Date().getTime()}`;
-        
+
         setFormData((prev) => ({
           ...prev,
           personal: {
@@ -477,11 +172,15 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
         }));
 
         setProfilePicturePreview(urlWithTimestamp);
-        setOriginalProfilePicture(urlWithTimestamp); // Update original for future cancels
-        setProfilePicture(null); // Clear file after successful save
+        setOriginalProfilePicture(urlWithTimestamp);
+
+        localStorage.setItem("profile_picture_url", urlWithTimestamp);
+
+        // ✅ THIS IS THE IMPORTANT LINE
+        window.dispatchEvent(new Event("profilePictureUpdated"));
       }
 
-      alert("Profile updated successfully!");
+      showToast("Profile updated successfully!", "success");
       setEditingSections((prev) => ({ ...prev, [section]: false }));
       setProfilePicture(null); // ✅ ADD THIS LINE - Ensure buttons disappear
       
@@ -490,7 +189,7 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
       const errorMsg = err.response?.data?.error || 
                       JSON.stringify(err.response?.data) || 
                       "Failed to update profile";
-      alert(errorMsg);
+      showToast(errorMsg, "error");
     } finally {
       setSaving(false);
     }
@@ -528,8 +227,55 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
     padding: "6px 0",
   };
 
+  // --- Bootstrap Toast Helper ---
+  const showToast = (message, type = "success") => {
+    const toastElement = document.getElementById("profileToast");
+    const toastBody = document.getElementById("profileToastMessage");
 
-  return (
+    toastBody.innerText = message;
+
+    toastElement.classList.remove("bg-success", "bg-danger", "bg-warning");
+    toastElement.classList.add(
+      type === "success"
+        ? "bg-success"
+        : type === "error"
+        ? "bg-danger"
+        : "bg-warning"
+    );
+
+    const toast = new window.bootstrap.Toast(toastElement);
+    toast.show();
+  };
+
+
+
+ return (
+  <>
+    <div
+      aria-live="polite"
+      aria-atomic="true"
+      className="position-fixed top-0 end-0 p-3"
+      style={{ zIndex: 9999 }}
+    >
+      <div
+        id="profileToast"
+        className="toast align-items-center text-white bg-success border-0"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div className="d-flex">
+          <div className="toast-body" id="profileToastMessage">Message</div>
+          <button
+            type="button"
+            className="btn-close btn-close-white me-2 m-auto"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+      </div>
+    </div>
+
     <div className="container-fluid py-4" style={{ backgroundColor: "#f8f9fa" }}>
       <div className="row">
         {/* LEFT SIDEBAR */}
@@ -577,7 +323,6 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
                   </>
                 )}
               </div>
-
               {/* Show Save/Cancel buttons when profile picture is changed */}
               {editable && profilePicture && (
                 <div className="d-flex justify-content-center gap-2 mb-3">
@@ -683,41 +428,9 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
 
         {/* RIGHT CONTENT AREA */}
         <div className="col-md-8">
-          {/* TABS */}
-          <div className="d-flex gap-2 mb-4" style={{ overflowX: "auto", whiteSpace: "nowrap" }}>
-            <button
-              className={`btn ${activeTab === "admin" ? "btn-dark" : "btn-light"}`}
-              style={{ borderRadius: "20px", padding: "8px 20px" }}
-              onClick={() => setActiveTab("admin")}
-            >
-              {title || "ADMIN PROFILE"}
-            </button>
-            <button
-              className={`btn ${activeTab === "salary" ? "btn-dark" : "btn-light"}`}
-              style={{ borderRadius: "20px", padding: "8px 20px" }}
-              onClick={() => setActiveTab("salary")}
-            >
-              Salary Information
-            </button>
-            <button
-              className={`btn ${activeTab === "payslips" ? "btn-dark" : "btn-light"}`}
-              style={{ borderRadius: "20px", padding: "8px 20px" }}
-              onClick={() => setActiveTab("payslips")}
-            >
-              Payslips
-            </button>
-            <button
-              className={`btn ${activeTab === "documents" ? "btn-dark" : "btn-light"}`}
-              style={{ borderRadius: "20px", padding: "8px 20px" }}
-              onClick={() => setActiveTab("documents")}
-            >
-              Documents
-            </button>
-          </div>
+          {/* PROFILE HEADING */}
+        <h3 className="mb-4 fw-bold">Profile</h3>
 
-          {/* ADMIN PROFILE TAB */}
-          {activeTab === "admin" && (
-            <>
               {/* Professional Information Section */}
               <div className="card shadow-sm border-0 mb-3" style={{ borderRadius: "12px" }}>
                 <div className="card-body p-4">
@@ -1183,23 +896,10 @@ const Profile = ({ title, editable, personal = {}, professional = {}, address = 
                   )}
                 </div>
               </div>
-
-            </>
-          )}
-
-          {/* OTHER TABS - Placeholder */}
-          {activeTab !== "admin" && (
-            <div className="card shadow-sm border-0" style={{ borderRadius: "12px" }}>
-              <div className="card-body p-5 text-center">
-                <i className="bi bi-folder2-open" style={{ fontSize: "3rem", color: "#ccc" }}></i>
-                <h5 className="mt-3 text-muted">Coming Soon</h5>
-                <p className="text-muted">This section is under development</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
+    </>
   );
 };
 

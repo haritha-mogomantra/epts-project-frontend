@@ -13,10 +13,77 @@ const AppHeaderDropdown = ({ userRole }) => {
   const fullName = `${first} ${last}`.trim() || "User";
   const role = (localStorage.getItem("role") || "").toLowerCase();
 
+  // 🔹 PROFILE PICTURE STATE
+  const [profilePicture, setProfilePicture] = React.useState("/default-profile.png");
+
+  // 🔹 FETCH PROFILE PICTURE ON MOUNT
+  React.useEffect(() => {
+    const fetchProfilePicture = async () => {
+      try {
+        // First check localStorage for cached picture
+        const cachedPicture = localStorage.getItem("profile_picture_url");
+        if (cachedPicture) {
+          setProfilePicture(cachedPicture);
+        }
+
+        const token = localStorage.getItem("access_token");
+        const endpoint = role === "admin" 
+          ? "/api/employee/admin/profile/" 
+          : "/api/employee/profile/";
+        
+        const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const data = await response.json();
+        if (data.profile_picture_url) {
+          const urlWithTimestamp = `${data.profile_picture_url}?t=${new Date().getTime()}`;
+          setProfilePicture(urlWithTimestamp);
+          localStorage.setItem("profile_picture_url", urlWithTimestamp);
+        }
+      } catch (err) {
+        console.log("Failed to fetch profile picture:", err);
+      }
+    };
+
+    if (role) {
+      fetchProfilePicture();
+    }
+  }, [role]);
+
+  // 🔹 SEPARATE useEffect FOR EVENT LISTENER (THIS IS THE FIX)
+  React.useEffect(() => {
+    const handleProfileUpdate = () => {
+      const updatedPicture = localStorage.getItem("profile_picture_url");
+      console.log("Profile picture updated event received:", updatedPicture); // Debug log
+      if (updatedPicture) {
+        setProfilePicture(updatedPicture);
+      }
+    };
+
+    window.addEventListener("profilePictureUpdated", handleProfileUpdate);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("profilePictureUpdated", handleProfileUpdate);
+    };
+  }, []); // Empty dependency array - runs once and stays active
+  
   return (
     <CDropdown variant="nav-item" placement="bottom-end">
-      <CDropdownToggle caret className="fw-bold text-black">
-        {fullName}
+      <CDropdownToggle caret className="fw-bold text-black d-flex align-items-center gap-2">
+        <img
+          src={profilePicture}
+          alt="Profile"
+          className="rounded-circle"
+          style={{
+            width: "32px",
+            height: "32px",
+            objectFit: "cover",
+            border: "2px solid #e5e7eb"
+          }}
+        />
+        <span>{fullName}</span>
       </CDropdownToggle>
 
       <CDropdownMenu className="pt-2">
@@ -47,72 +114,3 @@ const AppHeaderDropdown = ({ userRole }) => {
 };
 
 export default AppHeaderDropdown;
-
-
-/*
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
-
-const AppHeaderDropdown = ({ userRole }) => {
-  useEffect(() => {
-    import("bootstrap/dist/js/bootstrap.bundle.min.js");
-  }, []);
-
-  // Your format: first_name + last_name
-  const first = localStorage.getItem("first_name") || "";
-  const last = localStorage.getItem("last_name") || "";
-  const fullName = `${first} ${last}`.trim() || "User";
-
-  const role = (localStorage.getItem("role") || "").toLowerCase();
-
-  return (
-    <div className="dropdown text-end">
-      <button
-        className="btn btn-link text-decoration-none text-dark dropdown-toggle fw-semibold"
-        type="button"
-        id="headerDropdown"
-        data-bs-toggle="dropdown"
-        aria-expanded="false"
-      >
-        {fullName}
-      </button>
-
-      <ul
-        className="dropdown-menu dropdown-menu-end shadow"
-        aria-labelledby="headerDropdown"
-      >
-        <li>
-          <Link
-            className="dropdown-item"
-            to={role === "admin" ? "/pages/profile" : "/pages/employeeprofile"}
-          >
-            <i className="bi bi-person-circle me-2"></i> Profile
-          </Link>
-        </li>
-
-        <li>
-          <Link className="dropdown-item" to="/pages/change-password">
-            <i className="bi bi-key me-2"></i>Change Password
-          </Link>
-        </li>
-
-        <li>
-          <button
-            className="dropdown-item text-danger"
-            onClick={() => {
-              localStorage.clear();
-              window.location.href = "/login";
-            }}
-          >
-            <i className="bi bi-box-arrow-right me-2 text-danger"></i> Logout
-          </button>
-        </li>
-      </ul>
-    </div>
-  );
-};
-
-export default AppHeaderDropdown;
-*/
