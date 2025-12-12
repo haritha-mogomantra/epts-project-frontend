@@ -1080,11 +1080,24 @@ const getDeptColor = (dept) => {
                 />
 
                 <h4 className="fw-bold mb-1">{selectedEmployee.name}</h4>
-                <small className="text-muted">{selectedEmployee?.designation || "Not Assigned"}</small>
+                <div className="d-flex justify-content-center align-items-center gap-3 mt-1 mb-2">
 
-                <span className="badge mb-3" style={getDeptColor(selectedEmployee.department)}>
+                <small className="text-muted" style={{ fontSize: "15px" }}>
+                  {selectedEmployee?.designation || "Not Assigned"}
+                </small>
+
+                <span
+                  className="badge"
+                  style={{
+                    ...getDeptColor(selectedEmployee.department),
+                    padding: "6px 14px",
+                    fontSize: "13px"
+                  }}
+                >
                   {selectedEmployee.department}
                 </span>
+
+              </div>
 
                 <hr className="my-3" />
 
@@ -1125,25 +1138,8 @@ const getDeptColor = (dept) => {
                       #{selectedEmployee.rank}
                     </div>
                   </div>
-
                 </div>
-
-                <div className="mt-3">
-                  {selectedEmployee.rank <= 3 && (
-                    <span className="badge bg-success px-3 py-2">Top Performer</span>
-                  )}
-
-                  {selectedEmployee.rank > rankedEmployees.length - 3 && (
-                    <span className="badge bg-danger px-3 py-2">Needs Improvement</span>
-                  )}
-
-                  {selectedEmployee.rank > 3 && selectedEmployee.rank <= rankedEmployees.length - 3 && (
-                    <span className="badge bg-primary px-3 py-2">Stable Performance</span>
-                  )}
-                </div>
-
               </div>
-
             </div>
           </div>
         </div>

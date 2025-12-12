@@ -199,7 +199,10 @@ function EmployeePerformance() {
   };
  
   const handleNavigate = (emp, mode) => {
-    const evalId = emp.evaluation_id || emp.id;
+    const evalId =
+      emp.evaluation_id ??
+      emp.evaluation?.id ??
+      emp.id;
 
     if (!evalId) {
       alert("No evaluation ID found for this record.");

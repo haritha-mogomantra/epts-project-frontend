@@ -76,6 +76,7 @@ const PerformanceMetrics = () => {
   const [selectedWeek, setSelectedWeek] = useState("");
 
   const [employeeId, setEmployeeId] = useState("");
+  const [currentEmployeeId, setCurrentEmployeeId] = useState("");
   const [viewEmployeeId, setViewEmployeeId] = useState("");
   const [employeeData, setEmployeeData] = useState({
     name: "",
@@ -278,6 +279,9 @@ const PerformanceMetrics = () => {
 
     // always fill visible ID
     setViewEmployeeId(empId);
+    
+    // ✅ Store the current employee ID
+    setCurrentEmployeeId(empId);
 
     // IMPORTANT: for edit mode, set employeeId so submit works
     if (mode === "edit") {
@@ -305,81 +309,125 @@ const PerformanceMetrics = () => {
   
   useEffect(() => {
     const loadEmployeeEvaluation = async () => {
-      if (employee) {
-        setLoading((prev) => ({ ...prev, page: true }));
-        const empId = employee.user?.emp_id || employee.emp_id || employee.id;
+      if (!employee) return;
+      if (mode !== "edit" && mode !== "view") return;
+      if (!selectedWeek) return;
 
-        try {
-          const evalId = location.state?.evaluation_id || null;
+      setLoading((prev) => ({ ...prev, page: true }));
+      // Get employee ID from the clicked employee record
+const empId = employee.user?.emp_id || employee.emp_id || employee.employee_emp_id;
 
-          if (!evalId) {
-            console.error("Missing evaluation ID");
-            return;
-          }
-
-          const res = await axiosInstance.get(`/performance/evaluations/${evalId}/`);
-
-
-          const evalData = res.data;
-          setEvaluationId(evalData.id);
-
-          const metrics = evalData.metrics || {};
-
-
-          const metricFields = [
-            "communication_skills",
-            "multitasking",
-            "team_skills",
-            "technical_skills",
-            "job_knowledge",
-            "productivity",
-            "creativity",
-            "work_quality",
-            "professionalism",
-            "work_consistency",
-            "attitude",
-            "cooperation",
-            "dependability",
-            "attendance",
-            "punctuality",
-          ];
-
-          // Load scores
-          setScores(metricFields.map(field => metrics[field] ?? ""));
-
-          // Load comments
-          setComments(
-            metricFields.map(field => metrics[field + "_comment"] ?? "")
-          );
-
-          setEmployeeData({
-            name:
-              evalData.employee?.full_name ||
-              evalData.employee?.user?.full_name ||
-              "",
-            department:
-              evalData.employee?.department_name || "",
-            manager:
-              evalData.employee?.manager_name ||
-              evalData.evaluator?.full_name || "",
-            designation:
-              evalData.employee?.designation ||
-              evalData.employee?.role_name ||
-              evalData.employee?.position ||
-              "",
-            rank: evalData.rank || "-",
-          });
-
-        } catch (error) {
-          console.error("Error fetching existing evaluation:", error);
-        } finally {
+      try {
+        const { year, week } = parseWeek(selectedWeek);
+        
+        if (!year || !week) {
+          console.error("Invalid week format");
           setLoading((prev) => ({ ...prev, page: false }));
+          return;
         }
+
+        const res = await axiosInstance.get(
+          `/performance/evaluations/?employee_id=${empId}&week=${week}&year=${year}`
+        );
+
+        // ✅ FIX: Handle different response structures
+        let evalData = null;
+
+        // Check if paginated response
+        if (res.data && res.data.results && Array.isArray(res.data.results)) {
+          evalData = res.data.results[0];
+        }
+        // Check if direct array
+        else if (Array.isArray(res.data)) {
+          evalData = res.data[0];
+        }
+        // Check if single object
+        else if (res.data && res.data.id) {
+          evalData = res.data;
+        }
+
+        // Check if evaluation exists
+        if (!evalData) {
+          setValidationModal({
+            show: true,
+            message: `No evaluation found for this employee in Week ${week}, ${year}.`
+          });
+          setScores(Array(15).fill(""));
+          setComments(Array(15).fill(""));
+          setLoading((prev) => ({ ...prev, page: false }));
+          return;
+        }
+
+        setEvaluationId(evalData.id);
+
+        const metrics = evalData.metrics || {};
+
+        const metricFields = [
+          "communication_skills",
+          "multitasking",
+          "team_skills",
+          "technical_skills",
+          "job_knowledge",
+          "productivity",
+          "creativity",
+          "work_quality",
+          "professionalism",
+          "work_consistency",
+          "attitude",
+          "cooperation",
+          "dependability",
+          "attendance",
+          "punctuality",
+        ];
+
+        // Load scores
+        setScores(metricFields.map(field => metrics[field] ?? ""));
+
+        // Load comments
+        setComments(
+          metricFields.map(field => metrics[field + "_comment"] ?? "")
+        );
+
+        setEmployeeData({
+          name:
+            evalData.employee?.full_name ||
+            evalData.employee?.user?.full_name ||
+            evalData.employee_name ||
+            "",
+          department:
+            evalData.employee?.department_name ||
+            evalData.department_name ||
+            "",
+          manager:
+            evalData.employee?.manager_name ||
+            evalData.manager_name ||
+            evalData.evaluator_name ||
+            "",
+          designation:
+            evalData.employee?.designation ||
+            evalData.employee?.role_name ||
+            evalData.designation ||
+            "",
+          rank: evalData.rank || "-",
+        });
+
+      } catch (error) {
+        console.error("Error fetching evaluation:", error);
+        setValidationModal({
+          show: true,
+          message: "Failed to load evaluation data."
+        });
+        setScores(Array(15).fill(""));
+        setComments(Array(15).fill(""));
+      } finally {
+        setLoading((prev) => ({ ...prev, page: false }));
       }
     };
 
     loadEmployeeEvaluation();
-  }, [employee, location.state?.evaluation_id]);
+  }, [location.state?.evaluation_id, selectedWeek, mode]);
+
+  
 
   useEffect(() => {
     if (validationModal.show) {
@@ -887,13 +935,20 @@ const PerformanceMetrics = () => {
         )}
 
         {/* Top toolbar: Search (left) + Back & Print (right) */}
-        <div className="d-flex justify-content-between align-items-center mb-2 mt-2 p-2">
+        <div
+          className={
+            mode === "add"
+              ? "d-flex justify-content-between align-items-center mb-2 mt-2 p-2"
+              : "d-flex justify-content-end align-items-center mb-2 mt-2 p-2"
+          }
+        >
 
-          {/* Searchable Employee Selector */}
-          <div
-            style={{ width: "250px", position: "relative" }}
-            ref={dropdownRef}
-          >
+          {/* Searchable Employee Selector — show ONLY in ADD mode */}
+          {mode === "add" && (
+            <div
+              style={{ width: "250px", position: "relative" }}
+              ref={dropdownRef}
+            >
 
             {/* Search/Typing Input */}
             <input
@@ -1045,7 +1100,7 @@ const PerformanceMetrics = () => {
               }
             </ul>
           </div>
-
+          )}
           {/* RIGHT: Back + Print (conditional) */}
           <div className="d-flex align-items-center gap-2">
 
@@ -1097,10 +1152,11 @@ const PerformanceMetrics = () => {
                     style={mode && mode !== "add" ? readOnlyStyle : {}}
                     value={selectedWeek}
                     onChange={async (e) => {
-                      if (mode !== "add") return;
-
                       const newWeek = e.target.value;
                       setSelectedWeek(newWeek);
+
+                      // Only fetch eligible employees in ADD mode
+                      if (mode === "add") {
 
                       // fetch eligible employees
                       const { year, week } = parseWeek(newWeek);
@@ -1134,10 +1190,11 @@ const PerformanceMetrics = () => {
                           handleSearch();
                         }, 10);
                       }
+                    }
                     }}
                     min={minWeek}
                     max={maxWeek}
-                    disabled={mode && mode !== "add"}
+                    disabled={false}
                   />
                 </div>
 
@@ -1207,7 +1264,34 @@ const PerformanceMetrics = () => {
               </div>
 
               {/* TABLE */}
-              <div className="table-responsive p-2">
+              <div className="table-responsive p-2" style={{ position: "relative", minHeight: "400px" }}>
+                
+                {/* Dynamic Loading Overlay */}
+                {loading.page && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      background: "rgba(255, 255, 255, 0.85)",
+                      backdropFilter: "blur(3px)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      zIndex: 10,
+                      borderRadius: "8px"
+                    }}
+                  >
+                    <div className="spinner-border text-primary mb-3" style={{ width: "3rem", height: "3rem" }}>
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="text-muted fw-bold mb-0">Loading evaluation data...</p>
+                  </div>
+                )}
+
                 <table className="table table-bordered align-middle text-center">
                   <thead className="table-primary">
                     <tr>
