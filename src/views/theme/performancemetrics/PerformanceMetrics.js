@@ -67,7 +67,8 @@ const getUserRole = () => {
     localStorage.getItem("role") ||
     "";
 
-  return role.toLowerCase();
+  // normalize to Title Case so it matches backend serializer
+  return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
 };
 
 
@@ -330,7 +331,7 @@ const empId = employee.user?.emp_id || employee.emp_id || employee.employee_emp_
           `/performance/evaluations/?employee_id=${empId}&week=${week}&year=${year}`
         );
 
-        // ✅ FIX: Handle different response structures
+        //  FIX: Handle different response structures
         let evalData = null;
 
         // Check if paginated response
