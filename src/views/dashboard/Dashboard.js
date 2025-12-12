@@ -262,11 +262,21 @@ const filteredRankedEmployees = rankedEmployees.filter(emp => {
   return deptMatch && searchMatch;
 });
 
-// ✅ KEEP GLOBAL RANK — DO NOT RECALCULATE AFTER FILTERING
-const rankedFilteredEmployees = filteredRankedEmployees.map(emp => {
-  const globalRecord = rankedEmployees.find(e => e.emp_id === emp.emp_id);
-  return { ...emp, rank: globalRecord?.rank || emp.rank };
+// 🔄 RECALCULATE DEPARTMENT-WISE RANK AFTER FILTERING
+const deptSorted = [...filteredRankedEmployees].sort((a, b) => b.score - a.score);
+
+let deptRank = 1;
+let lastDeptScore = null;
+
+const rankedFilteredEmployees = deptSorted.map(emp => {
+  if (lastDeptScore !== null && emp.score !== lastDeptScore) {
+    deptRank += 1;
+  }
+  lastDeptScore = emp.score;
+
+  return { ...emp, rank: deptRank };
 });
+
 
 
 // SORTING LIKE EMPLOYEE PERFORMANCE

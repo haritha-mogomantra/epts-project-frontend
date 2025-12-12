@@ -707,3 +707,10 @@ td.col-rank {
   text-align: right !important;
   padding-right: 10px !important;
 }
+
+
+/* FORCE CENTER ALIGN ONLY FOR PERFORMANCE DASHBOARD RANK COLUMN */
+.performance-dashboard-table td:nth-child(5),
+.performance-dashboard-table th:nth-child(5) {
+  text-align: center !important;
+}
