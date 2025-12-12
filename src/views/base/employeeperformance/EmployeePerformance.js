@@ -436,7 +436,8 @@ function EmployeePerformance() {
                   <th
                     ref={(el) => (headerRefs.current["total_score"] = el)}
                     onClick={() => handleSort("total_score")}
-                    className="col-score" style={{ cursor: "pointer" }}
+                    className="col-score text-end"
+                    style={{ cursor: "pointer" }}
                   >
 
                     <div className="d-flex justify-content-between align-items-center">
@@ -492,7 +493,7 @@ function EmployeePerformance() {
                         "-"}
                       </td>
 
-                      <td className="col-score">{emp.total_score}</td>
+                      <td className="col-score text-end">{emp.total_score}</td>
                       <td className="col-rank">{emp.rank || "-"}</td>
                       <td>
 

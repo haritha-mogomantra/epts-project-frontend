@@ -697,3 +697,13 @@ td.col-rank {
   padding-right: 10px !important;
 }
 
+
+/* ============================================
+   EMPLOYEE PERFORMANCE PAGE — SCORE RIGHT ALIGN
+   ============================================ */
+
+.performance-table td:nth-child(5),
+.performance-table th:nth-child(5) {
+  text-align: right !important;
+  padding-right: 10px !important;
+}
