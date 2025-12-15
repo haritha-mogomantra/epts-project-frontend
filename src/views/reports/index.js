@@ -1,5 +1,5 @@
 import ButtonDropdowns from './ButtonDropdowns'
 import ButtonGroups from './ButtonGroups'
-import Buttons from './Buttons'
+import Reports from './Reports'
 
-export { ButtonDropdowns, ButtonGroups, Buttons }
+export { ButtonDropdowns, ButtonGroups, Reports }

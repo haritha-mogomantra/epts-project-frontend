@@ -305,7 +305,7 @@ const LoginDetails = () => {
         </div>
       )}
       <div className="text-dark mb-3">
-        <h5>LOGIN CREDENTIALS</h5>
+        <h5>EMPLOYEE CREDENTIALS</h5>
       </div>
 
       <div className="card shadow border-0">

@@ -1,5 +1,5 @@
 import employeeperformance from './employeeperformance'
-import Cards from './Cards'
+import credentials from './Credentials'
 import Carousels from './Carousels'
 import Collapses from './Collapses'
 import Dropdowns from './Dropdowns'
@@ -15,7 +15,7 @@ import Tooltips from './Tooltips'
 
 export {
   employeeperformance,
-  Cards,
+  Credentials,
   Carousels,
   Collapses,
   Dropdowns,

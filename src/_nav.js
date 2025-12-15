@@ -38,17 +38,17 @@ const adminMenu = [
           {
             component: CNavItem,
             name: "Employee details",
-            to: "/base/employeedetails",
+            to: "/admin/employeedetails",
           },
           {
             component: CNavItem,
             name: "Employee Performance",
-            to: "/base/employeeperformance",
+            to: "/admin/employeeperformance",
           },
           {
             component: CNavItem,
             name: "Employee credentials",
-            to: "/base/cards",
+            to: "/admin/credentials",
           },
         ],
       },
@@ -56,7 +56,7 @@ const adminMenu = [
       {
         component: CNavItem,
         name: "Reports",
-        to: "/buttons",
+        to: "/Reports",
         icon: <CIcon icon={cilCursor} customClassName="nav-icon" />,
       },
     ],
@@ -79,12 +79,12 @@ const employeeMenu = [
           {
             component: CNavItem,
             name: "Employee Dashboard",
-            to: "/base/collapses",
+            to: "/admin/collapses",
           },
           {
             component: CNavItem,
             name: "Employee Performance",
-            to: "/base/carousels",
+            to: "/admin/carousels",
           },
         ],
       },
@@ -102,7 +102,7 @@ const loginMenu = [
 ];
 
 // ===============================
-// FINAL ROLE-BASED MENU OUTPUT
+// FINAL ROLE-adminD MENU OUTPUT
 // ===============================
 let _nav = [];
 
@@ -142,25 +142,25 @@ const adminMenu = [
   {
     component: CNavItem,
     name: "Employee Details",
-    to: "/base/employeedetails",       // ✅ your correct route
+    to: "/admin/employeedetails",       // ✅ your correct route
     icon: <CIcon icon={cilAddressBook} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: "Employee Performance",
-    to: "/base/employeeperformance",   // ✅ your correct route
+    to: "/admin/employeeperformance",   // ✅ your correct route
     icon: <CIcon icon={cilChartLine} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: "Employee Credentials",
-    to: "/base/cards",                 // ✅ your correct route
+    to: "/admin/credentials",                 // ✅ your correct route
     icon: <CIcon icon={cilLockLocked} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: "Reports",
-    to: "/buttons",
+    to: "/Reports",
     icon: <CIcon icon={cilCursor} customClassName="nav-icon" />,
   },
 ];
@@ -172,13 +172,13 @@ const employeeMenu = [
   {
     component: CNavItem,
     name: "Employee Dashboard",
-    to: "/base/collapses",   // your actual dashboard route
+    to: "/admin/collapses",   // your actual dashboard route
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: "Employee Performance",
-    to: "/base/carousels",
+    to: "/admin/carousels",
     icon: <CIcon icon={cilChartLine} customClassName="nav-icon" />,
   },
 ];
@@ -195,7 +195,7 @@ const loginMenu = [
 ];
 
 // ===============================
-// FINAL ROLE-BASED MENU OUTPUT
+// FINAL ROLE-adminD MENU OUTPUT
 // ===============================
 let _nav = [];
 

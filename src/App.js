@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from "react";
-import { HashRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { CSpinner, useColorModes } from "@coreui/react";
 import "./scss/style.scss";
@@ -13,64 +13,45 @@ const Page404 = React.lazy(() => import("./views/pages/page404/Page404"));
 const Page500 = React.lazy(() => import("./views/pages/page500/Page500"));
 
 const App = () => {
-
-  // Clear all tokens when opening login page (prevents auto-redirect to dashboard)
+  // Clear tokens when opening login or root
   if (
-    window.location.hash === "" ||            // First time app loads
-    window.location.hash === "#/" ||          // Root route
-    window.location.hash === "#/login"        // Login route
+    window.location.pathname === "/" ||
+    window.location.pathname === "/login"
   ) {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("role");
   }
 
-  React.useEffect(() => {
-    const checkLoginRoute = () => {
-      if (window.location.hash === "#/login") {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("role");
-      }
-    };
-
-    checkLoginRoute();
-    window.addEventListener("hashchange", checkLoginRoute);
-    return () => window.removeEventListener("hashchange", checkLoginRoute);
+  useEffect(() => {
+    if (window.location.pathname === "/login") {
+      localStorage.clear();
+    }
   }, []);
-
 
   const { isColorModeSet, setColorMode } = useColorModes(
     "Employee performance tracking system"
   );
+
   const storedTheme = useSelector((state) => state.theme);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.href.split("?")[1]);
+    const urlParams = new URLSearchParams(window.location.search);
     const theme =
       urlParams.get("theme") &&
       urlParams.get("theme").match(/^[A-Za-z0-9\s]+/)[0];
-    if (theme) {
-      setColorMode(theme);
-    }
 
-    if (isColorModeSet()) return;
-
-    setColorMode(storedTheme);
+    if (theme) setColorMode(theme);
+    if (!isColorModeSet()) setColorMode(storedTheme);
   }, []);
 
-  //  ProtectedRoute
   const ProtectedRoute = ({ children, allowedRoles }) => {
     const token = localStorage.getItem("access_token");
     const role = localStorage.getItem("role")?.toLowerCase();
 
-    if (!token) {
+    if (!token) return <Navigate to="/login" replace />;
+    if (allowedRoles && role && !allowedRoles.includes(role))
       return <Navigate to="/login" replace />;
-    }
-
-    if (allowedRoles && role && !allowedRoles.includes(role)) {
-      return <Navigate to="/login" replace />;
-    }
 
     return children;
   };
@@ -79,22 +60,15 @@ const App = () => {
     const token = localStorage.getItem("access_token");
     const role = localStorage.getItem("role")?.toLowerCase();
 
-    // Not logged in → go to login
-    if (!token) {
-      return <Navigate to="/login" replace />;
-    }
-
-    // Logged in employee
-    if (role === "employee") {
+    if (!token) return <Navigate to="/login" replace />;
+    if (role === "employee")
       return <Navigate to="/employee-dashboard" replace />;
-    }
 
-    // Logged in admin / manager
     return <Navigate to="/dashboard" replace />;
   };
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Suspense
         fallback={
           <div className="pt-3 text-center">
@@ -120,7 +94,7 @@ const App = () => {
           />
         </Routes>
       </Suspense>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

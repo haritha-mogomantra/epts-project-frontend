@@ -1,42 +1,36 @@
-import React from 'react'
-import { useLocation } from 'react-router-dom'
-
-import routes from '../routes'
-
-import { CBreadcrumb, CBreadcrumbItem } from '@coreui/react'
+import React from "react";
+import { useLocation, Link } from "react-router-dom";
+import routes from "../routes";
+import "../scss/style.scss";
 
 const AppBreadcrumb = () => {
-  const currentLocation = useLocation().pathname
+  const currentLocation = useLocation().pathname;
 
-  const getRouteName = (pathname, routes) => {
-    const currentRoute = routes.find((route) => route.path === pathname)
-    return currentRoute ? currentRoute.name : false
-  }
+  // Directly find matching route (no folder names)
+  const getRouteName = (pathname) => {
+    const route = routes.find((r) => r.path === pathname);
+    return route ? route.name : null;
+  };
 
-  const getBreadcrumbs = (location) => {
-    const breadcrumbs = []
-    location.split('/').reduce((prev, curr, index, array) => {
-      const currentPathname = `${prev}/${curr}`
-      const routeName = getRouteName(currentPathname, routes)
-      routeName &&
-        breadcrumbs.push({
-          pathname: currentPathname,
-          name: routeName,
-          active: index + 1 === array.length ? true : false,
-        })
-      return currentPathname
-    })
-    return breadcrumbs
-  }
-
-  const breadcrumbs = getBreadcrumbs(currentLocation)
+  const currentPage = getRouteName(currentLocation);
 
   return (
-    <CBreadcrumb className="my-0">
-      <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
-     
-    </CBreadcrumb>
-  )
-}
+    <nav className="breadcrumb-container">
+      <ul className="breadcrumb">
+        {/* Always show Home */}
+        <li>
+          <Link to="/dashboard">Home</Link>
+        </li>
 
-export default React.memo(AppBreadcrumb)
+        {/* Show only the final matching page */}
+        {currentPage && (
+          <li className="active">
+            <span>{currentPage}</span>
+          </li>
+        )}
+      </ul>
+    </nav>
+  );
+};
+
+export default AppBreadcrumb;

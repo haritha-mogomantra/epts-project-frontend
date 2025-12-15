@@ -697,3 +697,11 @@ td.col-rank {
   padding-right: 10px !important;
 }
 
+/* == bredcrum == */ 
+
+.breadcrumb li::after {
+  content: " > ";
+  color:gray;
+  margin-left:5px;
+  margin-right:5px;
+}

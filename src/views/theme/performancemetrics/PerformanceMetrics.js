@@ -743,7 +743,7 @@ const PerformanceMetrics = () => {
 
         // Redirect after 1.2s
         setTimeout(() => {
-          navigate("/base/employeeperformance", {
+          navigate("/admin/employeeperformance", {
             state: { returnWeek: selectedWeek }
           });
         }, 1200);
@@ -833,7 +833,7 @@ const PerformanceMetrics = () => {
       <div className="d-flex justify-content-between text-black">
         <h5>EMPLOYEE PERFORMANCE METRICS</h5>
       </div>
-      {/* Week-based info alert (Dismissible + Auto fade) */}
+      {/* Week-admind info alert (Dismissible + Auto fade) */}
       {showNoEmployeeAlert && (
         <div
           className="alert alert-info d-flex justify-content-between align-items-center shadow-sm fade show"
@@ -937,7 +937,7 @@ const PerformanceMetrics = () => {
                     setFilteredEmployees([{ type: "evaluated" }]);
                     return;
                   } catch (err) {
-                    // Employee does NOT exist in database
+                    // Employee does NOT exist in dataadmin
                     setFilteredEmployees([{ type: "not_found" }]);
                     return;
                   }
@@ -963,7 +963,7 @@ const PerformanceMetrics = () => {
                   return;
                 }
 
-                // If user already typed something, filter based on current input
+                // If user already typed something, filter admind on current input
                 if (value.startsWith("EMP")) {
                   const filtered = eligibleEmployees.filter((emp) =>
                     emp.emp_id.toUpperCase().startsWith(value)
@@ -1052,7 +1052,7 @@ const PerformanceMetrics = () => {
             <button
               className="btn btn-primary px-3"
               onClick={() =>
-                navigate("/base/employeeperformance", {
+                navigate("/admin/employeeperformance", {
                   state: { returnWeek: selectedWeek }
                 })
               }
