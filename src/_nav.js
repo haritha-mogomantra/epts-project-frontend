@@ -161,8 +161,16 @@ const adminMenu = [
     component: CNavItem,
     name: "Reports",
     to: "/Reports",
+
+     icon: <CIcon icon={cilCursor} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: "Master",
+    to: "/pages/page404",
     icon: <CIcon icon={cilCursor} customClassName="nav-icon" />,
   },
+  
 ];
 
 // ===============================

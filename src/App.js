@@ -2,18 +2,22 @@ import React, { Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { CSpinner, useColorModes } from "@coreui/react";
+
 import "./scss/style.scss";
 import "./scss/examples.scss";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
+// layouts
 const DefaultLayout = React.lazy(() => import("./layout/DefaultLayout"));
+
+// pages
 const Login = React.lazy(() => import("./views/pages/login/Login"));
 const Register = React.lazy(() => import("./views/pages/register/Register"));
 const Page404 = React.lazy(() => import("./views/pages/page404/Page404"));
 const Page500 = React.lazy(() => import("./views/pages/page500/Page500"));
 
 const App = () => {
-  // Clear tokens when opening login or root
+  // clear auth on login/root
   if (
     window.location.pathname === "/" ||
     window.location.pathname === "/login"
@@ -45,6 +49,7 @@ const App = () => {
     if (!isColorModeSet()) setColorMode(storedTheme);
   }, []);
 
+  // protected route
   const ProtectedRoute = ({ children, allowedRoles }) => {
     const token = localStorage.getItem("access_token");
     const role = localStorage.getItem("role")?.toLowerCase();
@@ -56,6 +61,7 @@ const App = () => {
     return children;
   };
 
+  // root redirect
   const RootRedirect = () => {
     const token = localStorage.getItem("access_token");
     const role = localStorage.getItem("role")?.toLowerCase();
@@ -77,13 +83,28 @@ const App = () => {
         }
       >
         <Routes>
+          {/* root */}
           <Route index element={<RootRedirect />} />
 
-          <Route exact path="/login" element={<Login />} />
-          <Route exact path="/register" element={<Register />} />
-          <Route exact path="/404" element={<Page404 />} />
-          <Route exact path="/500" element={<Page500 />} />
+          {/* auth pages – FULL SCREEN */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
+          {/* error pages – FULL SCREEN */}
+          <Route path="/404" element={<Page404 />} />
+          <Route path="/500" element={<Page500 />} />
+
+          {/* ✅ MASTER PAGE – FULL SCREEN */}
+          <Route
+            path="/pages/page404"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Page404 />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* dashboard + sidebar */}
           <Route
             path="/*"
             element={
